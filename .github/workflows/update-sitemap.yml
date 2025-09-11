@@ -2,7 +2,7 @@ name: Update Sitemap from Blogger RSS
 
 on:
   schedule:
-    - cron: "0 */6 * * *"   # har 6 ghante me chalega
+    - cron: "0 */6 * * *"  
   workflow_dispatch:
 
 jobs:

@@ -1,1 +1,35 @@
+name: Update Sitemap from Blogger RSS
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"   # har 6 ghante me chalega
+  workflow_dispatch:        # manually bhi run kar sakta hai
+
+jobs:
+  update-sitemap:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Fetch Blogger RSS
+        run: curl -L "https://worldwidenews2308.blogspot.com/feeds/posts/default?alt=rss" -o blogger.xml
+
+      - name: Convert RSS to Sitemap
+        run: |
+          echo '<?xml version="1.0" encoding="UTF-8"?>' > sitemap.xml
+          echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' >> sitemap.xml
+          xmllint --xpath "//item/link/text()" blogger.xml | while read -r url; do
+            echo "  <url><loc>$url</loc></url>" >> sitemap.xml
+          done
+          echo '</urlset>' >> sitemap.xml
+
+      - name: Commit and Push
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
+          git add sitemap.xml
+          git commit -m "Update sitemap from Blogger RSS"
+          git push
+
 .github/workflows/update-sitemap.yml

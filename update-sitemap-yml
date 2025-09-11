@@ -12,24 +12,26 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Fetch Blogger RSS
-        run: curl -L "https://worldwidenews2308.blogspot.com/feeds/posts/default?alt=rss" -o blogger.xml
-
-      - name: Convert RSS to Sitemap
+      - name: Fetch and Convert Blogger RSS to Sitemap
         run: |
-          echo '<?xml version="1.0" encoding="UTF-8"?>' > sitemap.xml
-          echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' >> sitemap.xml
-          xmllint --xpath "//item/link/text()" blogger.xml | while read -r url; do
-            echo "  <url><loc>$url</loc></url>" >> sitemap.xml
-          done
-          echo '</urlset>' >> sitemap.xml
+          python3 - <<EOF
+          import feedparser
+
+          rss_url = "https://worldwidenews2308.blogspot.com/feeds/posts/default?alt=rss"
+          feed = feedparser.parse(rss_url)
+
+          with open("sitemap.xml", "w", encoding="utf-8") as f:
+              f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
+              f.write('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n')
+              for entry in feed.entries:
+                  f.write(f'  <url><loc>{entry.link}</loc></url>\n')
+              f.write('</urlset>\n')
+          EOF
 
       - name: Commit and Push
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "actions@github.com"
           git add sitemap.xml
-          git commit -m "Update sitemap from Blogger RSS"
+          git commit -m "Update sitemap from Blogger RSS" || echo "No changes to commit"
           git push
-
-.github/workflows/update-sitemap.yml
